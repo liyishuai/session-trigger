@@ -34,7 +34,7 @@ jobs:
             if [ -n "$RESULT" ]; then
               # Parse markdown line: * [![text](badge.svg)](link) [optional status]
               # Match the badge part and replace the entire line with badge + new status
-              sed -i "s|^\(\* \[!\[.*\]\(.*/workflows/claude\.yml/badge\.svg\)\]\(.*\)\)\( .*\)\?$|\1 $RESULT|" README.md
+              sed -i "s|^\(\* \[!\[[^]]*\]([^)]*workflows/claude\.yml/badge\.svg)\]([^)]*)\).*$|\1 $RESULT|" README.md
               git config user.name "github-actions[bot]"
               git config user.email "github-actions[bot]@users.noreply.github.com"
               git add README.md
@@ -54,8 +54,8 @@ jobs:
           # Parse markdown line and remove status if present
           # Match: * [![text](badge.svg)](link) status
           # Replace with: * [![text](badge.svg)](link)
-          if grep -q "workflows/claude\.yml/badge\.svg.*) " README.md; then
-            sed -i "s|^\(\* \[!\[.*\]\(.*/workflows/claude\.yml/badge\.svg\)\]\(.*\)\) .*$|\1|" README.md
+          if grep -q "workflows/claude\.yml/badge\.svg) " README.md; then
+            sed -i "s|^\(\* \[!\[[^]]*\]([^)]*workflows/claude\.yml/badge\.svg)\]([^)]*)\) .*$|\1|" README.md
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add README.md

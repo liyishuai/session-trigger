@@ -30,7 +30,6 @@ jobs:
                 }
               ]
             }')
-          echo "Response: <$response>"
           echo "$response" | jq .
 
           # Check for error code 1308
@@ -50,7 +49,7 @@ jobs:
           set -e
           # Parse markdown line: * [![text](badge.svg)](link) [optional status]
           # Match the badge part and replace the entire line with badge + new status
-          sed -i "s|^\(\* \[!\[.*\]\(.*/workflows/glm\.yml/badge\.svg\)\]\(.*\)\)\( .*\)\?$|\1 $GLM_ERROR_MSG|" README.md
+          sed -i "s|^\(\* \[!\[[^]]*\]([^)]*workflows/glm\.yml/badge\.svg)\]([^)]*)\).*$|\1 $GLM_ERROR_MSG|" README.md
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md
@@ -66,8 +65,8 @@ jobs:
           # Parse markdown line and remove status if present
           # Match: * [![text](badge.svg)](link) status
           # Replace with: * [![text](badge.svg)](link)
-          if grep -q "workflows/glm\.yml/badge\.svg.*) " README.md; then
-            sed -i "s|^\(\* \[!\[.*\]\(.*/workflows/glm\.yml/badge\.svg\)\]\(.*\)\) .*$|\1|" README.md
+          if grep -q "workflows/glm\.yml/badge\.svg) " README.md; then
+            sed -i "s|^\(\* \[!\[[^]]*\]([^)]*workflows/glm\.yml/badge\.svg)\]([^)]*)\) .*$|\1|" README.md
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add README.md
