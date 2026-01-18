@@ -9,14 +9,67 @@ jobs:
   trigger:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      contents: write
     steps:
       - uses: actions/checkout@v6
-      - name: Trigger GLM
-        id: GLM
-        uses: anomalyco/opencode/github@latest
-        env:
-          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+      - uses: actions/setup-java@v5
         with:
-          model: zai-coding-plan/glm-4.5-air
-          prompt: 1+1
+          java-version: '8'
+          distribution: temurin
+          cache: maven
+      - name: Build and run
+        id: glm
+        env:
+          ZAI_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+          ZAI_BASE_URL: https://open.bigmodel.cn/api/coding/paas/v4/
+        run: |
+          # Build and run Java application
+          cd trigger-glm
+          mvn package -q
+          set +e
+          output=$(java -jar target/trigger-glm-1.0.0.jar 2>&1)
+          set -e
+
+          echo "$output"
+
+          # Parse JSON output with jq
+          SUCCESS=$(echo "$output" | jq -r '.success // false')
+          GLM_ERROR=$(echo "$output" | jq -r '.code // empty')
+          GLM_ERROR_MSG=$(echo "$output" | jq -r '.message // empty')
+
+          echo "SUCCESS=$SUCCESS" >> $GITHUB_ENV
+          echo "GLM_ERROR=$GLM_ERROR" >> $GITHUB_ENV
+          echo "GLM_ERROR_MSG=$GLM_ERROR_MSG" >> $GITHUB_ENV
+      - name: Update README on failure
+        if: env.SUCCESS != 'true'
+        run: |
+          set -e
+          # Update table row: | ![GLM](badge.svg) | ✅ | | -> | ![GLM](badge.svg) | ❌ | error message |
+          sed -i 's#^\(| !\[GLM\]([^)]*workflows/glm\.yml/badge\.svg)\) |[^|]*|[^|]*|$#\1 | ❌ | '"$GLM_ERROR_MSG"' |#' README.md
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          if ! git diff --staged --quiet; then
+            git commit -m "Update README with GLM error"
+            git push
+          fi
+          # Exit with error if not 1308
+          if [ "$GLM_ERROR" != "1308" ]; then
+            echo "::error title=GLM API Error::Error code: $GLM_ERROR, Message: $GLM_ERROR_MSG"
+            exit ${GLM_ERROR:-1}
+          fi
+      - name: Clear README on success
+        if: env.SUCCESS == 'true'
+        run: |
+          set -e
+          # Update table row: | ![GLM](badge.svg) | ❌ | error | -> | ![GLM](badge.svg) | ✅ | |
+          if grep -q "workflows/glm\.yml/badge\.svg) | ❌" README.md; then
+            sed -i 's#^\(| !\[GLM\]([^)]*workflows/glm\.yml/badge\.svg)\) | ❌ |[^|]*|$#\1 | ✅ | |#' README.md
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            if ! git diff --staged --quiet; then
+              git commit -m "Clear GLM error from README"
+              git push
+            fi
+          fi

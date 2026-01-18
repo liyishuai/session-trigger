@@ -10,13 +10,57 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: write
     steps:
+      - uses: actions/checkout@v6
       - name: Trigger Claude
         id: claude
         uses: anthropics/claude-code-base-action@beta
+        continue-on-error: true
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: 1+1
           max_turns: 1
           system_prompt: Result only
           model: haiku
+      - name: Update README on failure
+        if: steps.claude.outcome == 'failure'
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          set -e
+          if [ -n "${EXECUTION_FILE:-}" ] && [ -f "$EXECUTION_FILE" ]; then
+            RESULT=$(jq -r 'if type == "array" then .[] else . end | select(.type == "result") | .result // empty' "$EXECUTION_FILE" | tail -1)
+            # Update table row: | ![Claude](badge.svg) | ✅ | | -> | ![Claude](badge.svg) | ❌ | error message |
+            sed -i 's#^\(| !\[Claude\]([^)]*workflows/claude\.yml/badge\.svg)\) |[^|]*|[^|]*|$#\1 | ❌ | '"$RESULT"' |#' README.md
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            if ! git diff --staged --quiet; then
+              git commit -m "Update README with Claude failure result"
+              git push
+            fi
+            # Exit with error unless it's a spending cap issue
+            if [[ "$RESULT" != *"Spending cap reached"* ]]; then
+              echo "::error::Claude failed: $RESULT"
+              exit 1
+            fi
+          else
+            echo "::error::EXECUTION_FILE is not set or does not exist"
+            exit 1
+          fi
+      - name: Clear README on success
+        if: steps.claude.outcome == 'success'
+        run: |
+          set -e
+          # Update table row: | ![Claude](badge.svg) | ❌ | error | -> | ![Claude](badge.svg) | ✅ | |
+          if grep -q "workflows/claude\.yml/badge\.svg) | ❌" README.md; then
+            sed -i 's#^\(| !\[Claude\]([^)]*workflows/claude\.yml/badge\.svg)\) | ❌ |[^|]*|$#\1 | ✅ | |#' README.md
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            if ! git diff --staged --quiet; then
+              git commit -m "Clear Claude failure result from README"
+              git push
+            fi
+          fi
