@@ -1,0 +1,5 @@
+| Service | Status | Message |
+|---------|--------|---------|
+{{#services}}
+| [![{{name}}]({{badge_url}})]({{usage_url}}) | {{#success}}✅{{/success}}{{^success}}❌{{/success}} [{{timestamp}}]({{job_url}}) | {{message}} |
+{{/services}}
