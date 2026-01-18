@@ -10,13 +10,48 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: write
     steps:
+      - uses: actions/checkout@v4
       - name: Trigger Claude
         id: claude
         uses: anthropics/claude-code-base-action@beta
+        continue-on-error: true
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: 1+1
           max_turns: 1
           system_prompt: Result only
           model: haiku
+      - name: Update README on failure
+        if: steps.claude.outcome == 'failure'
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          RESULT=$(cat "$EXECUTION_FILE" | jq -r 'select(.type == "result") | .result // empty' | tail -1)
+          if [ -n "$RESULT" ]; then
+            # Escape special characters for safe insertion
+            ESCAPED_RESULT=$(printf '%s\n' "$RESULT" | sed 's/[&/\]/\\&/g')
+            # Check if README already has a Claude result line
+            if grep -q "^Claude: " README.md; then
+              sed -i "s/^Claude: .*/Claude: $ESCAPED_RESULT/" README.md
+            else
+              printf 'Claude: %s\n' "$RESULT" >> README.md
+            fi
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            git diff --staged --quiet || git commit -m "Update README with Claude failure result"
+            git diff --staged --quiet || git push
+          fi
+      - name: Clear README on success
+        if: steps.claude.outcome == 'success'
+        run: |
+          if grep -q "^Claude: " README.md; then
+            sed -i '/^Claude: /d' README.md
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            git diff --staged --quiet || git commit -m "Clear Claude failure result from README"
+            git diff --staged --quiet || git push
+          fi

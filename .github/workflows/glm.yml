@@ -8,15 +8,18 @@ on:
 jobs:
   trigger:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
     steps:
-      - uses: actions/checkout@v6
       - name: Trigger GLM
-        id: GLM
-        uses: anomalyco/opencode/github@latest
-        env:
-          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
-        with:
-          model: zai-coding-plan/glm-4.5-air
-          prompt: 1+1
+        run: |
+          curl -s "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions" \
+            -H "Authorization: Bearer ${{ secrets.ZHIPU_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "glm-4.5-air",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "1+1"
+                }
+              ]
+            }' | jq .
