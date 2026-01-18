@@ -17,7 +17,8 @@ jobs:
         id: glm
         continue-on-error: true
         run: |
-          response=$(curl -s "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions" \
+          # Run curl and capture both output and exit code
+          response=$(curl -f -s "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions" \
             -H "Authorization: Bearer ${{ secrets.ZHIPU_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{
@@ -29,19 +30,40 @@ jobs:
                   "content": "1+1"
                 }
               ]
-            }')
-          echo "$response" | jq .
+            }' 2>&1)
+          curl_exit_code=$?
 
-          # Check for error code 1308
-          error_code=$(echo "$response" | jq -r '.error.code // empty')
-          if [ "$error_code" = "1308" ]; then
-            echo "GLM_ERROR=1308" >> $GITHUB_ENV
-            echo "GLM_ERROR_MSG=$(echo "$response" | jq -r '.error.message')" >> $GITHUB_ENV
-            exit 1
-          elif [ -n "$error_code" ]; then
-            echo "GLM_ERROR=$error_code" >> $GITHUB_ENV
-            echo "GLM_ERROR_MSG=$(echo "$response" | jq -r '.error.message')" >> $GITHUB_ENV
-            exit 1
+          echo "$response" | jq . || true
+
+          # Parse error code from response
+          error_code=$(echo "$response" | jq -r '.error.code // empty' 2>/dev/null || echo "")
+
+          # If curl failed with non-zero exit code
+          if [ $curl_exit_code -ne 0 ]; then
+            # If error code is 1308, handle it specially
+            if [ "$error_code" = "1308" ]; then
+              echo "GLM_ERROR=1308" >> $GITHUB_ENV
+              echo "GLM_ERROR_MSG=$(echo "$response" | jq -r '.error.message' 2>/dev/null)" >> $GITHUB_ENV
+              exit 1
+            else
+              # For any other error, fail with curl's exit code
+              echo "curl failed with exit code $curl_exit_code"
+              echo "$response"
+              exit $curl_exit_code
+            fi
+          fi
+
+          # If curl succeeded but response contains error code
+          if [ -n "$error_code" ]; then
+            if [ "$error_code" = "1308" ]; then
+              echo "GLM_ERROR=1308" >> $GITHUB_ENV
+              echo "GLM_ERROR_MSG=$(echo "$response" | jq -r '.error.message')" >> $GITHUB_ENV
+              exit 1
+            else
+              echo "GLM_ERROR=$error_code" >> $GITHUB_ENV
+              echo "GLM_ERROR_MSG=$(echo "$response" | jq -r '.error.message')" >> $GITHUB_ENV
+              exit 1
+            fi
           fi
       - name: Update README on error 1308
         if: steps.glm.outcome == 'failure' && env.GLM_ERROR == '1308'
