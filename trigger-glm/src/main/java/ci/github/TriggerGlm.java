@@ -1,15 +1,18 @@
 package ci.github;
 
-import ai.z.openapi.ZhipuAiClient;
-import ai.z.openapi.service.model.ChatCompletionCreateParams;
-import ai.z.openapi.service.model.ChatCompletionResponse;
-import ai.z.openapi.service.model.ChatMessage;
-import ai.z.openapi.service.model.ChatMessageRole;
-import ai.z.openapi.service.model.ChatError;
-import ai.z.openapi.core.Constants;
+import java.util.Arrays;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Collections;
+import ai.z.openapi.ZhipuAiClient;
+import ai.z.openapi.core.Constants;
+import ai.z.openapi.service.model.ChatCompletionCreateParams;
+import ai.z.openapi.service.model.ChatCompletionResponse;
+import ai.z.openapi.service.model.ChatError;
+import ai.z.openapi.service.model.ChatMessage;
+import ai.z.openapi.service.model.ChatMessageRole;
+import ai.z.openapi.service.model.ChatThinking;
+import ai.z.openapi.service.model.ChatThinkingType;
 
 /**
  * Trigger GLM API using the z-ai-sdk-java library.
@@ -26,11 +29,15 @@ public class TriggerGlm {
         // Make API call
         ChatCompletionCreateParams request = ChatCompletionCreateParams.builder()
                 .model(Constants.ModelChatGLM4_5_AIR)
-                .maxTokens(1)
-                .messages(Collections.singletonList(
+                .thinking(ChatThinking.builder().type(ChatThinkingType.DISABLED.value()).build())
+                .messages(Arrays.asList(
+                        ChatMessage.builder()
+                                .role(ChatMessageRole.SYSTEM.value())
+                                .content("result only")
+                                .build(),
                         ChatMessage.builder()
                                 .role(ChatMessageRole.USER.value())
-                                .content("1")
+                                .content("1+1")
                                 .build()))
                 .build();
 
