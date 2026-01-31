@@ -1,6 +1,16 @@
 {
   "services": [
     {
+      "key": "glm",
+      "name": "GLM",
+      "badge_url": "https://github.com/liyishuai/session-trigger/actions/workflows/glm.yml/badge.svg",
+      "usage_url": "https://bigmodel.cn/usercenter/glm-coding/usage",
+      "success": true,
+      "timestamp": "2026-01-31 18:16:08",
+      "job_url": "https://github.com/liyishuai/session-trigger/actions/runs/21542954410",
+      "message": ""
+    },
+    {
       "key": "claude",
       "name": "Claude",
       "badge_url": "https://github.com/liyishuai/session-trigger/actions/workflows/claude.yml/badge.svg",
@@ -8,16 +18,6 @@
       "success": true,
       "timestamp": "2026-01-31 17:35:23",
       "job_url": "https://github.com/liyishuai/session-trigger/actions/runs/21542484003",
-      "message": ""
-    },
-    {
-      "key": "glm",
-      "name": "GLM",
-      "badge_url": "https://github.com/liyishuai/session-trigger/actions/workflows/glm.yml/badge.svg",
-      "usage_url": "https://bigmodel.cn/usercenter/glm-coding/usage",
-      "success": true,
-      "timestamp": "2026-01-31 17:20:05",
-      "job_url": "https://github.com/liyishuai/session-trigger/actions/runs/21542304624",
       "message": ""
     }
   ]
