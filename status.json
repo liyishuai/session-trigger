@@ -1,6 +1,16 @@
 {
   "services": [
     {
+      "key": "claude",
+      "name": "Claude",
+      "badge_url": "https://github.com/liyishuai/session-trigger/actions/workflows/claude.yml/badge.svg",
+      "usage_url": "https://claude.ai/settings/usage",
+      "success": true,
+      "timestamp": "2026-02-02 10:47:27",
+      "job_url": "https://github.com/liyishuai/session-trigger/actions/runs/21575576959",
+      "message": ""
+    },
+    {
       "key": "glm",
       "name": "GLM",
       "badge_url": "https://github.com/liyishuai/session-trigger/actions/workflows/glm.yml/badge.svg",
@@ -8,16 +18,6 @@
       "success": true,
       "timestamp": "2026-02-02 09:18:54",
       "job_url": "https://github.com/liyishuai/session-trigger/actions/runs/21574041513",
-      "message": ""
-    },
-    {
-      "key": "claude",
-      "name": "Claude",
-      "badge_url": "https://github.com/liyishuai/session-trigger/actions/workflows/claude.yml/badge.svg",
-      "usage_url": "https://claude.ai/settings/usage",
-      "success": true,
-      "timestamp": "2026-02-02 07:32:25",
-      "job_url": "https://github.com/liyishuai/session-trigger/actions/runs/21572338944",
       "message": ""
     }
   ]
