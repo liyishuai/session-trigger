@@ -1,5 +1,6 @@
 package ci.github;
 
+import java.time.LocalTime;
 import java.util.Arrays;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +27,12 @@ public class TriggerGlm {
         // SDK reads ZAI_API_KEY from env automatically
         ZhipuAiClient client = ZhipuAiClient.builder().build();
 
+        // Build a dynamic arithmetic prompt from the current time
+        LocalTime now = LocalTime.now();
+        int minute = now.getMinute();
+        int second = now.getSecond();
+        String prompt = minute + "+" + second;
+
         // Make API call
         ChatCompletionCreateParams request = ChatCompletionCreateParams.builder()
                 .model(Constants.ModelChatGLM4_5_AIR)
@@ -37,7 +44,7 @@ public class TriggerGlm {
                                 .build(),
                         ChatMessage.builder()
                                 .role(ChatMessageRole.USER.value())
-                                .content("1+1")
+                                .content(prompt)
                                 .build()))
                 .build();
 
